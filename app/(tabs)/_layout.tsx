@@ -1,35 +1,35 @@
 import { Tabs } from 'expo-router';
+import { Home, ShipWheelIcon } from 'lucide-react-native';
 import React from 'react';
-import { Home, Compass } from 'lucide-react-native';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+const Tablayout = () => {
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+    <Tabs>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <Home size={28} color={color} />,
+          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="List"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <Compass size={28} color={color} />,
+          title: 'List',
+          tabBarIcon: ({ color, size }) => (
+            <ShipWheelIcon color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name=""
+        options={{
+          title: 'SingleData',
+          href: null,
         }}
       />
     </Tabs>
   );
-}
+};
+
+export default Tablayout;
