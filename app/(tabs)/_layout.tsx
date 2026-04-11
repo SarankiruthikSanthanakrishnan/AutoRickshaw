@@ -4,14 +4,15 @@ import React from 'react';
 
 const Tablayout = () => {
   return (
-    <Tabs>
+    <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen
-        name="index"
+        name="Home"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
         }}
       />
+
       <Tabs.Screen
         name="List"
         options={{
@@ -21,10 +22,10 @@ const Tablayout = () => {
           ),
         }}
       />
+
       <Tabs.Screen
-        name=""
+        name="driver/[id]"
         options={{
-          title: 'SingleData',
           href: null,
         }}
       />
