@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 const SingleData = () => {
   return (
     <View>
-      <Text>[id]</Text>
+      <Text></Text>
     </View>
   );
 };
