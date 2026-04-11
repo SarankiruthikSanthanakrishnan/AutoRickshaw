@@ -13,7 +13,9 @@ export default function Index() {
 
   useEffect(() => {
     if (ready) {
-      router.replace('/(tabs)/Home');
+      //router.replace('/(tabs)/Home');
+      router.push('/(admin-tabs)/Login');
+
     }
   }, [ready]);
   return (

@@ -14,3 +14,10 @@ export interface DriverData {
   rating: number;
   price: string;
 }
+
+export interface Driver {
+  id: string;
+  name: string;
+  vehicleType: string;
+  phoneNumber: string;
+}
