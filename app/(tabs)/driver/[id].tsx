@@ -1,24 +1,87 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, Linking, Alert } from 'react-native';
-import { mockDrivers } from '../../../data';
-import { Phone, MessageCircle, ArrowLeft, ShieldCheck, MapPin } from 'lucide-react-native';
+import { doc, getDoc } from 'firebase/firestore';
+import {
+  ArrowLeft,
+  MapPin,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+} from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Linking,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { db } from '../../../config/firebase';
+import { DriverData } from '../../../types';
+import { useTheme } from '../../../utils/Theme';
 
 export default function DriverDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  
-  const driver = mockDrivers.find(d => d.id === id);
+  const { colors } = useTheme();
+
+  const [driver, setDriver] = useState<DriverData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDriver = async () => {
+      try {
+        const docRef = doc(db, 'drivers', id as string);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setDriver({ id: docSnap.id, ...docSnap.data() } as DriverData);
+        }
+      } catch (error) {
+        console.error('Error fetching driver:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) fetchDriver();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.safeArea,
+          { backgroundColor: colors.background, justifyContent: 'center' },
+        ]}
+      >
+        <ActivityIndicator size="large" color="#0a66c2" />
+      </SafeAreaView>
+    );
+  }
 
   if (!driver) {
     return (
-      <View style={styles.errorContainer}>
+      <View
+        style={[styles.errorContainer, { backgroundColor: colors.background }]}
+      >
         <Text style={styles.errorText}>Driver not found</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: colors.card }]}
+          onPress={() => router.back()}
+        >
+          <Text style={[styles.backButtonText, { color: colors.text }]}>
+            Go Back
+          </Text>
         </TouchableOpacity>
       </View>
     );
   }
+
+  const profileUri = driver.image
+    ? driver.image
+    : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
 
   const handleCall = () => {
     const url = `tel:${driver.phoneNumber}`;
@@ -27,44 +90,62 @@ export default function DriverDetails() {
         if (supported) {
           Linking.openURL(url);
         } else {
-          Alert.alert("Error", "Your device doesn't support calling from this app.");
+          Alert.alert(
+            'Error',
+            "Your device doesn't support calling from this app."
+          );
         }
       })
-      .catch((err) => console.error("An error occurred", err));
+      .catch((err) => console.error('An error occurred', err));
   };
 
   const handleWhatsApp = () => {
     // Format phone number to remove + and spaces for wa.me link
     const cleanPhone = driver.phoneNumber.replace(/[\+\s]/g, '');
-    const url = `https://wa.me/${cleanPhone}`;
+    const url = `https://wa.me/${cleanPhone}?text=Hey I need ${driver.vehicleType} now`;
     Linking.canOpenURL(url)
       .then((supported) => {
         if (supported) {
           Linking.openURL(url);
         } else {
-          Alert.alert("Error", "WhatsApp is not installed on your device.");
+          Alert.alert('Error', 'WhatsApp is not installed on your device.');
         }
       })
-      .catch((err) => console.error("An error occurred", err));
+      .catch((err) => console.error('An error occurred', err));
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBack} onPress={() => router.back()}>
-          <ArrowLeft color="#1e293b" size={24} />
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.card, borderBottomColor: colors.border },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.headerBack}
+          onPress={() => router.back()}
+        >
+          <ArrowLeft color={colors.text} size={24} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Driver Details</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Driver Details
+        </Text>
         <View style={{ width: 24 }} />
       </View>
 
       <View style={styles.container}>
         {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <Image source={{ uri: driver.image }} style={styles.profileImage} />
-          <Text style={styles.driverName}>{driver.name}</Text>
+        <View style={[styles.profileCard, { backgroundColor: colors.card }]}>
+          <Image
+            source={{ uri: profileUri }}
+            style={[styles.profileImage, { borderColor: colors.background }]}
+          />
+          <Text style={[styles.driverName, { color: colors.text }]}>
+            {driver.name}
+          </Text>
           <Text style={styles.subCategory}>{driver.subCategory}</Text>
-          
+
           <View style={styles.badgeRow}>
             <View style={styles.badge}>
               <ShieldCheck color="#22c55e" size={16} />
@@ -72,33 +153,41 @@ export default function DriverDetails() {
             </View>
             <View style={styles.badge}>
               <MapPin color="#0a66c2" size={16} />
-              <Text style={[styles.badgeText, { color: '#0a66c2' }]}>Available</Text>
+              <Text style={[styles.badgeText, { color: '#0a66c2' }]}>
+                Available
+              </Text>
             </View>
           </View>
         </View>
 
         {/* Info Card */}
-        <View style={styles.infoCard}>
+        <View style={[styles.infoCard, { backgroundColor: colors.card }]}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Vehicle Number</Text>
-            <Text style={styles.infoValue}>{driver.vehicleNumber}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>
+              {driver.vehicleNumber}
+            </Text>
           </View>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Category</Text>
-            <Text style={styles.infoValue}>{driver.category}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>
+              {driver.category}
+            </Text>
           </View>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Phone Number</Text>
-            <Text style={styles.infoValue}>{driver.phoneNumber}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>
+              {driver.phoneNumber}
+            </Text>
           </View>
         </View>
 
         {/* Actions Card */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.callButton]} 
+          <TouchableOpacity
+            style={[styles.actionButton, styles.callButton]}
             activeOpacity={0.8}
             onPress={handleCall}
           >
@@ -106,8 +195,8 @@ export default function DriverDetails() {
             <Text style={styles.actionButtonText}>Call Driver</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.waButton]} 
+          <TouchableOpacity
+            style={[styles.actionButton, styles.waButton]}
             activeOpacity={0.8}
             onPress={handleWhatsApp}
           >
@@ -116,7 +205,7 @@ export default function DriverDetails() {
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -132,9 +221,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 16,
-    backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
   },
   headerBack: {
     padding: 8,
@@ -150,12 +237,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   profileCard: {
-    backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#64748b',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -167,7 +253,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 16,
     borderWidth: 3,
-    borderColor: '#f1f5f9',
   },
   driverName: {
     fontSize: 22,
@@ -199,11 +284,10 @@ const styles = StyleSheet.create({
     color: '#16a34a',
   },
   infoCard: {
-    backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 20,
     marginBottom: 24,
-    shadowColor: '#64748b',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -226,7 +310,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#f1f5f9',
   },
   actionsContainer: {
     gap: 16,
@@ -268,7 +351,6 @@ const styles = StyleSheet.create({
   backButton: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: '#e2e8f0',
     borderRadius: 8,
   },
   backButtonText: {

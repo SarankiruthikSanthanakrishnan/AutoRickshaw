@@ -1,5 +1,3 @@
-import type { LucideIcon } from 'lucide-react-native';
-
 export type VehicleCategory = 'Auto' | 'Van';
 
 export interface DriverData {
@@ -8,9 +6,11 @@ export interface DriverData {
   vehicleNumber: string;
   phoneNumber: string;
   category: VehicleCategory;
-  subCategory?: string; // Auto, Share Auto, Van
+  subCategory?: string;
+  vehicleType?: string; // Auto, Share Auto, Van
   image: string;
   driverImage: string;
+  cloudPublicId?: string; // Stored from Cloudinary response
   rating: number;
   price: string;
 }

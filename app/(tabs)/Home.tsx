@@ -1,70 +1,120 @@
 import { useRouter } from 'expo-router';
-import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView } from 'react-native';
-import { Car, Bus } from 'lucide-react-native';
+import { Bus, Car } from 'lucide-react-native';
+import { useRef } from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../utils/Theme';
 
 export default function Home() {
   const router = useRouter();
+  const { colors } = useTheme();
+
+  const lastTap = useRef<number>(0);
+
+  const handleDoubleTap = () => {
+    const now = Date.now();
+    const DELAY = 300;
+    if (lastTap.current && now - lastTap.current < DELAY) {
+      router.push('/(admin-tabs)/Login' as any);
+    } else {
+      lastTap.current = now;
+    }
+  };
 
   const handlePress = (category: string) => {
     router.push({ pathname: '/(tabs)/List', params: { category } });
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Transport Booking</Text>
+          <TouchableOpacity
+            onPress={handleDoubleTap}
+            activeOpacity={1}
+            style={styles.secretButton}
+          >
+            <Image
+              source={{
+                uri: 'https://res.cloudinary.com/dzadw7z7l/image/upload/v1776014197/icon_m8hkbv.jpg',
+              }}
+              style={styles.logo}
+            />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            Transport Booking
+          </Text>
           <Text style={styles.headerSubtitle}>Select your ride category</Text>
         </View>
 
         <View style={styles.cardContainer}>
           {/* Auto Container */}
-          <TouchableOpacity 
-            style={[styles.card, styles.autoCard]} 
+          <TouchableOpacity
+            style={[
+              styles.card,
+              styles.autoCard,
+              { backgroundColor: colors.background },
+            ]}
             activeOpacity={0.8}
             onPress={() => handlePress('Auto')}
           >
             <View style={styles.cardContent}>
               <Car color="#0a66c2" size={40} />
-              <Text style={styles.cardTitle}>Auto & Share Auto</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>
+                Auto & Share Auto
+              </Text>
               <Text style={styles.cardDesc}>Quick rides for city travel</Text>
             </View>
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1593027814880-9274fcce0625?auto=format&fit=crop&q=80&w=300' }} 
-              style={styles.cardImage} 
+            <Image
+              source={{
+                uri: 'https://images.unsplash.com/photo-1593027814880-9274fcce0625?auto=format&fit=crop&q=80&w=300',
+              }}
+              style={styles.cardImage}
             />
           </TouchableOpacity>
 
           {/* Van Container */}
-          <TouchableOpacity 
-            style={[styles.card, styles.vanCard]} 
+          <TouchableOpacity
+            style={[
+              styles.card,
+              styles.vanCard,
+              { backgroundColor: colors.background },
+            ]}
             activeOpacity={0.8}
-            onPress={() => handlePress('Van')}
+            onPress={() => handlePress('Car & Travels')}
           >
             <View style={styles.cardContent}>
               <Bus color="#0ea5e9" size={40} />
-              <Text style={styles.cardTitle}>Van</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>
+                Cars and Travels
+              </Text>
               <Text style={styles.cardDesc}>Spacious travels for groups</Text>
             </View>
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1620023023027-6f6eb855fdcc?auto=format&fit=crop&q=80&w=300' }} 
-              style={styles.cardImage} 
+            <Image
+              source={{
+                uri: 'https://images.unsplash.com/photo-1620023023027-6f6eb855fdcc?auto=format&fit=crop&q=80&w=300',
+              }}
+              style={styles.cardImage}
             />
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f3f4f6', // Light gray background
-  },
   container: {
     flex: 1,
     padding: 24,
+  },
+  logo: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  secretButton: {
+    marginBottom: 16,
+    alignSelf: 'flex-start',
   },
   header: {
     marginBottom: 32,
@@ -84,7 +134,6 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   card: {
-    backgroundColor: '#ffffff',
     borderRadius: 16,
     overflow: 'hidden',
     flexDirection: 'row',
@@ -113,7 +162,6 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#334155',
     marginTop: 8,
     marginBottom: 4,
   },

@@ -1,20 +1,47 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView, TextInput } from 'react-native';
-import { mockDrivers } from '../../data';
-import { Search, Star, MapPin, ChevronRight, CheckCircle2 } from 'lucide-react-native';
-import { useState } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { CheckCircle2, ChevronRight, Search, Star } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { db } from '../../config/firebase';
+import { DriverData } from '../../types';
+import { useTheme } from '../../utils/Theme';
 
 export default function ListScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const params = useLocalSearchParams();
   const category = params.category as string;
   const [searchQuery, setSearchQuery] = useState('');
+  const [drivers, setDrivers] = useState<DriverData[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'drivers'), (snapshot) => {
+      const driversData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as DriverData[];
+      setDrivers(driversData);
+    });
+    return unsubscribe;
+  }, []);
 
   // Filter based on category and search query
-  const filteredDrivers = mockDrivers.filter(d => {
+  const filteredDrivers = drivers.filter((d) => {
     const matchesCategory = category ? d.category === category : true;
-    const matchesSearch = d.subCategory!.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          d.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchLow = searchQuery.toLowerCase();
+    const itemSub = d.subCategory ? d.subCategory.toLowerCase() : '';
+    const itemName = d.name ? d.name.toLowerCase() : '';
+    const matchesSearch =
+      itemSub.includes(searchLow) || itemName.includes(searchLow);
     return matchesCategory && matchesSearch;
   });
 
@@ -22,62 +49,91 @@ export default function ListScreen() {
     router.push({ pathname: '/(tabs)/driver/[id]', params: { id } });
   };
 
-  const renderItem = ({ item }: { item: typeof mockDrivers[0] }) => (
-    <TouchableOpacity 
-      style={styles.card} 
-      activeOpacity={0.8}
-      onPress={() => handleDriverPress(item.id)}
-    >
-      <View style={styles.imageSection}>
-        {/* Main Vehicle Image Component */}
-        <View style={styles.vehicleImageContainer}>
-          <Image source={{ uri: item.image }} style={styles.vehicleImage} />
-        </View>
-        
-        {/* Duplicate Image Container -> Driver Profile Image Component */}
-        <View style={styles.driverProfileContainer}>
-          <Image source={{ uri: item.driverImage }} style={styles.driverImage} />
-          <View style={styles.onlineBadge} />
-        </View>
-      </View>
-      
-      <View style={styles.cardInfo}>
-        <View style={styles.titleRow}>
-          <Text style={styles.driverName} numberOfLines={1}>{item.name}</Text>
-          <View style={styles.ratingContainer}>
-            <Star color="#eab308" size={14} fill="#eab308" />
-            <Text style={styles.ratingText}>{item.rating}</Text>
-          </View>
-        </View>
-        
-        <Text style={styles.subCategory}>{item.subCategory} • {item.vehicleNumber}</Text>
-        
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>{item.price}</Text>
-          <View style={styles.verifiedBadge}>
-            <CheckCircle2 color="#16a34a" size={12} />
-            <Text style={styles.verifiedText}>Verified</Text>
-          </View>
-        </View>
-      </View>
+  const renderItem = ({ item }: { item: DriverData }) => {
+    // Provide visually appealing fallback urls if driver image was opted out
+    const vehicleUri = item.image
+      ? item.image
+      : 'https://images.unsplash.com/photo-1593027814880-9274fcce0625?auto=format&fit=crop&q=80&w=300';
+    const profileUri = item.image
+      ? item.image
+      : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
 
-      <View style={styles.chevronContainer}>
-        <ChevronRight color="#cbd5e1" size={24} />
-      </View>
-    </TouchableOpacity>
-  );
+    return (
+      <TouchableOpacity
+        style={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+        activeOpacity={0.8}
+        onPress={() => handleDriverPress(item.id)}
+      >
+        <View style={styles.imageSection}>
+          {/* Main Vehicle Image Component */}
+          <View style={styles.vehicleImageContainer}>
+            <Image source={{ uri: vehicleUri }} style={styles.vehicleImage} />
+          </View>
+
+          {/* Duplicate Image Container -> Driver Profile Image Component */}
+          <View style={styles.driverProfileContainer}>
+            <Image source={{ uri: profileUri }} style={styles.driverImage} />
+            <View style={styles.onlineBadge} />
+          </View>
+        </View>
+
+        <View style={styles.cardInfo}>
+          <View style={styles.titleRow}>
+            <Text
+              style={[styles.driverName, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {item.name}
+            </Text>
+            <View style={styles.ratingContainer}>
+              <Star color="#eab308" size={14} fill="#eab308" />
+              <Text style={styles.ratingText}>{item.rating}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.subCategory}>
+            {item.subCategory} • {item.vehicleNumber}
+          </Text>
+
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>{item.price}</Text>
+            <View style={styles.verifiedBadge}>
+              <CheckCircle2 color="#16a34a" size={12} />
+              <Text style={styles.verifiedText}>Verified</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.chevronContainer}>
+          <ChevronRight color={colors.icon} size={24} />
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Find your ride...</Text>
-        
-        <View style={styles.searchBox}>
-          <Search color="#94a3b8" size={20} />
-          <TextInput 
-            style={styles.searchInput}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.card, borderBottomColor: colors.border },
+        ]}
+      >
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Find your ride...
+        </Text>
+
+        <View
+          style={[styles.searchBox, { backgroundColor: colors.background }]}
+        >
+          <Search color={colors.icon} size={20} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search driver, vehicle or category..."
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor={colors.placeholder}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -96,22 +152,16 @@ export default function ListScreen() {
           </View>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
   header: {
-    backgroundColor: '#ffffff',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
   },
   headerTitle: {
     fontSize: 22,
@@ -139,12 +189,12 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
+    borderWidth: 1,
     // Zoho professional shadow
-    shadowColor: '#64748b',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -211,7 +261,6 @@ const styles = StyleSheet.create({
   driverName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1e293b',
     flex: 1,
     marginRight: 8,
   },

@@ -1,109 +1,192 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Plus, Edit, Trash2, User } from 'lucide-react-native';
-import { Driver } from '../../types';
-
-// Mock Initial Data
-const INITIAL_DRIVERS: Driver[] = [
-  { id: '1', name: 'Ramesh Kumar', vehicleType: 'Auto', phoneNumber: '+91 9876543210' },
-  { id: '2', name: 'Suresh Raina', vehicleType: 'Van', phoneNumber: '+91 8765432109' },
-  { id: '3', name: 'Muthu', vehicleType: 'Share Auto', phoneNumber: '+91 7654321098' },
-];
+import { Redirect, useRouter } from 'expo-router';
+import { collection, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { Edit, LogOut, Trash2, User } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { db } from '../../config/firebase';
+import { DriverData } from '../../types';
+import { useAuth } from '../../utils/AuthContext';
+import { useTheme } from '../../utils/Theme';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [drivers, setDrivers] = useState<Driver[]>(INITIAL_DRIVERS);
+  const { colors } = useTheme();
+  const { user, signOut } = useAuth();
+  const [drivers, setDrivers] = useState<DriverData[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, 'drivers'),
+      (snapshot) => {
+        const driversData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as DriverData[];
+        setDrivers(driversData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching drivers', error);
+        setLoading(false);
+      }
+    );
+    return unsubscribe;
+  }, []);
 
   const handleDelete = (id: string) => {
-    Alert.alert('Delete Driver', 'Are you sure you want to delete this driver?', [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Delete', 
-        style: 'destructive',
-        onPress: () => setDrivers((prev) => prev.filter((d) => d.id !== id)) 
-      },
-    ]);
+    Alert.alert(
+      'Delete Driver',
+      'Are you sure you want to delete this driver?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, 'drivers', id));
+            } catch (error: any) {
+              Alert.alert('Error', error.message);
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const renderItem = ({ item }: { item: Driver }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.avatar}>
-          <User color="#0a66c2" size={24} />
+  const renderItem = ({ item }: { item: DriverData }) => (
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
+    >
+      <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
+        <View style={[styles.avatar, { backgroundColor: colors.primaryLight }]}>
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.driverAvatar} />
+          ) : (
+            <User color={colors.primary} size={24} />
+          )}
         </View>
         <View style={styles.info}>
-          <Text style={styles.name}>{item.name}</Text>
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>{item.vehicleType}</Text>
+          <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
+          <View
+            style={[
+              styles.badgeContainer,
+              { backgroundColor: colors.surface || colors.background },
+            ]}
+          >
+            <Text style={[styles.badgeText, { color: colors.placeholder }]}>
+              {item.vehicleType || item.category}
+            </Text>
           </View>
-          <Text style={styles.phone}>{item.phoneNumber}</Text>
+          <Text style={[styles.phone, { color: colors.icon }]}>
+            {item.phoneNumber}
+          </Text>
         </View>
       </View>
-      
-      <View style={styles.actions}>
-        <TouchableOpacity 
-          style={[styles.actionBtn, styles.editBtn]}
+
+      <View style={[styles.actions, { backgroundColor: colors.card }]}>
+        <TouchableOpacity
+          style={[
+            styles.actionBtn,
+            styles.editBtn,
+            { borderRightColor: colors.border },
+          ]}
           onPress={() => router.push(`/(admin-tabs)/edit/${item.id}` as any)}
         >
-          <Edit color="#0a66c2" size={16} style={styles.actionIcon} />
-          <Text style={styles.editBtnText}>Edit</Text>
+          <Edit color={colors.primary} size={16} style={styles.actionIcon} />
+          <Text style={[styles.editBtnText, { color: colors.primary }]}>
+            Edit
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.actionBtn, styles.deleteBtn]}
           onPress={() => handleDelete(item.id)}
         >
-          <Trash2 color="#ef4444" size={16} style={styles.actionIcon} />
-          <Text style={styles.deleteBtnText}>Delete</Text>
+          <Trash2 color={colors.danger} size={16} style={styles.actionIcon} />
+          <Text style={[styles.deleteBtnText, { color: colors.danger }]}>
+            Delete
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
+  if (!user) return <Redirect href="/(admin-tabs)/Login" />;
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Drivers</Text>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => router.push('/(admin-tabs)/add' as any)}
-          activeOpacity={0.8}
-        >
-          <Plus color="#ffffff" size={20} />
-          <Text style={styles.addButtonText}>Add New</Text>
-        </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.card, borderBottomColor: colors.border },
+        ]}
+      >
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Drivers
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <TouchableOpacity
+            onPress={signOut}
+            style={[
+              styles.logoutButton,
+              { backgroundColor: colors.danger + '15' },
+            ]}
+          >
+            <LogOut color={colors.danger} size={24} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <FlatList
-        data={drivers}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+      {loading ? (
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={drivers}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', marginTop: 40 }}>
+              <Text style={{ color: colors.placeholder, fontSize: 16 }}>
+                No drivers found.
+              </Text>
+            </View>
+          }
+        />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingVertical: 16,
-    backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1e293b',
   },
   addButton: {
     flexDirection: 'row',
@@ -118,15 +201,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 6,
   },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#fef2f2',
+  },
   listContainer: {
     padding: 24,
     gap: 16,
   },
   card: {
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -138,7 +224,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
   },
   avatar: {
     width: 48,
@@ -148,6 +233,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    overflow: 'hidden',
+  },
+  driverAvatar: {
+    width: '100%',
+    height: '100%',
   },
   info: {
     flex: 1,
@@ -156,11 +246,9 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#334155',
   },
   badgeContainer: {
     alignSelf: 'flex-start',
-    backgroundColor: '#f1f5f9',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -178,7 +266,6 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    backgroundColor: '#f8fafc',
   },
   actionBtn: {
     flex: 1,
@@ -189,10 +276,8 @@ const styles = StyleSheet.create({
   },
   editBtn: {
     borderRightWidth: 1,
-    borderRightColor: '#e2e8f0',
   },
-  deleteBtn: {
-  },
+  deleteBtn: {},
   actionIcon: {
     marginRight: 8,
   },

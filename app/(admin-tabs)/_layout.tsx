@@ -1,14 +1,19 @@
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, User, User2Icon } from 'lucide-react-native';
+import { LayoutDashboard, User, PlusCircle } from 'lucide-react-native';
 import { Platform } from 'react-native';
+import { useTheme } from '../../utils/Theme';
+import { useAuth } from '../../utils/AuthContext';
 
 export default function AdminLayout() {
+  const { colors } = useTheme();
+  const { user } = useAuth();
+  
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.background,
           borderTopWidth: 1,
           borderTopColor: '#e2e8f0',
           height: Platform.OS === 'ios' ? 88 : 60,
@@ -21,7 +26,7 @@ export default function AdminLayout() {
           shadowRadius: 12,
           elevation: 8,
         },
-        tabBarActiveTintColor: '#0a66c2',
+        tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: '#94a3b8',
         tabBarLabelStyle: {
           fontSize: 12,
@@ -33,6 +38,7 @@ export default function AdminLayout() {
         name="index"
         options={{
           title: 'Admin',
+          href: user ? undefined : null,
           tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
         }}
       />
@@ -40,17 +46,18 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="Login"
         options={{
-          title:'Login',
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />
+          title: 'Login',
+          href: null,
+          tabBarStyle: { display: 'none' }, // Hides tab bar on login screen map
         }}
       />
 
       <Tabs.Screen
         name="Add"
         options={{
-          title:'Add',
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />
-
+          title: 'Add',
+          href: user ? undefined : null,
+          tabBarIcon: ({ color, size }) => <PlusCircle color={color} size={size} />,
         }}
       />
 
