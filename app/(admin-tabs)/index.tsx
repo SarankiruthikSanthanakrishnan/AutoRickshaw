@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { db } from '../../config/firebase';
 import { DriverData } from '../../types';
 import { useAuth } from '../../utils/AuthContext';
@@ -55,7 +56,11 @@ export default function AdminDashboard() {
             try {
               await deleteDoc(doc(db, 'drivers', id));
             } catch (error: any) {
-              Alert.alert('Error', error.message);
+              Toast.show({
+                type: 'error',
+                text1: 'Delete Failed',
+                text2: error.message,
+              });
             }
           },
         },
@@ -123,7 +128,7 @@ export default function AdminDashboard() {
     </View>
   );
 
-  if (!user) return <Redirect href="/(admin-tabs)/Login" />;
+  if (!user) return <Redirect href="/(tabs)/Home" />;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

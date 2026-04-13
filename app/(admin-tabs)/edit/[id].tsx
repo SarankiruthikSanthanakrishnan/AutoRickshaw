@@ -14,7 +14,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -151,14 +150,14 @@ export default function EditDriver() {
 
   if (loading) {
     return (
-      <SafeAreaView
+      <View
         style={[
           styles.safeArea,
           { backgroundColor: colors.background, justifyContent: 'center' },
         ]}
       >
         <ActivityIndicator size="large" color={colors.primary || '#0a66c2'} />
-      </SafeAreaView>
+      </View>
     );
   }
 

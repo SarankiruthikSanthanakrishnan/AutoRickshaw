@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { auth } from '../../config/firebase';
 import { useAuth } from '../../utils/AuthContext';
 import { useTheme } from '../../utils/Theme';
@@ -32,10 +33,18 @@ export default function AdminLogin() {
         await signIn(creds.user.uid);
         router.replace('/(admin-tabs)' as any);
       } catch (error: any) {
-        alert(error.message);
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: error.message,
+        });
       }
     } else {
-      alert('Please enter both email and password.');
+      Toast.show({
+        type: 'error',
+        text1: 'Required',
+        text2: 'Please enter both email and password.',
+      });
     }
   };
 

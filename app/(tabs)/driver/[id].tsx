@@ -13,12 +13,12 @@ import {
   Alert,
   Image,
   Linking,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { db } from '../../../config/firebase';
 import { DriverData } from '../../../types';
 import { useTheme } from '../../../utils/Theme';
@@ -50,14 +50,14 @@ export default function DriverDetails() {
 
   if (loading) {
     return (
-      <SafeAreaView
+      <View
         style={[
           styles.safeArea,
           { backgroundColor: colors.background, justifyContent: 'center' },
         ]}
       >
         <ActivityIndicator size="large" color="#0a66c2" />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -90,10 +90,11 @@ export default function DriverDetails() {
         if (supported) {
           Linking.openURL(url);
         } else {
-          Alert.alert(
-            'Error',
-            "Your device doesn't support calling from this app."
-          );
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: "Your device doesn't support calling from this app.",
+          });
         }
       })
       .catch((err) => console.error('An error occurred', err));
@@ -108,7 +109,11 @@ export default function DriverDetails() {
         if (supported) {
           Linking.openURL(url);
         } else {
-          Alert.alert('Error', 'WhatsApp is not installed on your device.');
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'WhatsApp is not installed on your device.',
+          });
         }
       })
       .catch((err) => console.error('An error occurred', err));
