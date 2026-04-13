@@ -1,27 +1,27 @@
-import { useRouter, Redirect } from 'expo-router';
-import { Car, Hash, Phone, Save, User } from 'lucide-react-native';
-import { useTheme } from '../../utils/Theme';
-import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { useAuth } from '../../utils/AuthContext';
-import { uploadImage } from '../../config/Cloudinary';
+import { Redirect, useRouter } from 'expo-router';
+import { addDoc, collection, getDocs } from 'firebase/firestore';
+import { Car, Hash, Phone, Save, User } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Image,
-  ActivityIndicator,
-  ScrollView,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
+import { uploadImage } from '../../config/Cloudinary';
+import { db } from '../../config/firebase';
+import { useAuth } from '../../utils/AuthContext';
+import { useTheme } from '../../utils/Theme';
 
-const VEHICLE_TYPES = ['Auto', 'Car & Travels', 'Mini Truck', 'E-Rickshaw'];
+const VEHICLE_TYPES = ['Auto', 'Car & Travels', 'E-Rickshaw'];
 
 export default function AddDriver() {
   const router = useRouter();
@@ -97,15 +97,28 @@ export default function AddDriver() {
           rating: 4.5,
         });
 
-        Toast.show({ type: 'success', text1: 'Success', text2: 'Driver added successfully.' });
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Driver added successfully.',
+        });
         router.back();
       } catch (error: any) {
-        Toast.show({ type: 'error', text1: 'Error saving driver', text2: error.message });
+        Toast.show({
+          type: 'error',
+          text1: 'Error saving driver',
+          text2: error.message,
+        });
       } finally {
         setLoading(false);
       }
     } else {
-      Toast.show({ type: 'error', text1: 'Missing Details', text2: 'Please fill name, vehicle type, vehicle number and phone number.' });
+      Toast.show({
+        type: 'error',
+        text1: 'Missing Details',
+        text2:
+          'Please fill name, vehicle type, vehicle number and phone number.',
+      });
     }
   };
 
