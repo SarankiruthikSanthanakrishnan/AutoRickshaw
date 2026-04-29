@@ -16,6 +16,7 @@ import Toast from 'react-native-toast-message';
 import { db } from '../../config/firebase';
 import { DriverData } from '../../types';
 import { useAuth } from '../../utils/AuthContext';
+import LoadingAnimation from '../../utils/LoadingAnimation';
 import { useTheme } from '../../utils/Theme';
 
 export default function AdminDashboard() {
@@ -24,6 +25,17 @@ export default function AdminDashboard() {
   const { user, signOut } = useAuth();
   const [drivers, setDrivers] = useState<DriverData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const formatPhoneNumber = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length === 12 && digits.startsWith('91')) {
+      return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+    }
+    if (digits.length === 10) {
+      return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+    }
+    return value;
+  };
   useEffect(() => {
     const unsubscribe = onSnapshot(
       collection(db, 'drivers'),
@@ -85,18 +97,30 @@ export default function AdminDashboard() {
         </View>
         <View style={styles.info}>
           <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
-          <View
-            style={[
-              styles.badgeContainer,
-              { backgroundColor: colors.surface || colors.background },
-            ]}
-          >
-            <Text style={[styles.badgeText, { color: colors.placeholder }]}>
-              {item.vehicleType || item.category}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <View
+              style={[
+                styles.badgeContainer,
+                { backgroundColor: colors.surface || colors.background },
+              ]}
+            >
+              <Text style={[styles.badgeText, { color: colors.placeholder }]}>
+                {item.vehicleType || item.category}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.badgeContainer,
+                { backgroundColor: (!item.status || item.status === 'active') ? '#dcfce7' : '#fee2e2' },
+              ]}
+            >
+              <Text style={[styles.badgeText, { color: (!item.status || item.status === 'active') ? '#16a34a' : '#ef4444' }]}>
+                {(!item.status || item.status === 'active') ? 'Active' : 'Deactive'}
+              </Text>
+            </View>
           </View>
           <Text style={[styles.phone, { color: colors.icon }]}>
-            {item.phoneNumber}
+            {formatPhoneNumber(item.phoneNumber)}
           </Text>
         </View>
       </View>
@@ -158,7 +182,7 @@ export default function AdminDashboard() {
         <View
           style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
         >
-          <ActivityIndicator size="large" color={colors.primary} />
+          <LoadingAnimation />
         </View>
       ) : (
         <FlatList

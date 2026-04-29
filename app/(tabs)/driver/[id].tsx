@@ -7,10 +7,9 @@ import {
   Phone,
   ShieldCheck,
 } from 'lucide-react-native';
+import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
   Image,
   Linking,
   StyleSheet,
@@ -21,6 +20,7 @@ import {
 import Toast from 'react-native-toast-message';
 import { db } from '../../../config/firebase';
 import { DriverData } from '../../../types';
+import LoadingAnimation from '../../../utils/LoadingAnimation';
 import { useTheme } from '../../../utils/Theme';
 
 export default function DriverDetails() {
@@ -53,10 +53,14 @@ export default function DriverDetails() {
       <View
         style={[
           styles.safeArea,
-          { backgroundColor: colors.background, justifyContent: 'center' },
+          {
+            backgroundColor: colors.background,
+            justifyContent: 'center',
+            alignItems: 'center',
+          },
         ]}
       >
-        <ActivityIndicator size="large" color="#0a66c2" />
+        <LoadingAnimation />
       </View>
     );
   }
@@ -83,8 +87,25 @@ export default function DriverDetails() {
     ? driver.image
     : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
 
+  const normalizePhoneNumber = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length === 10) return `91${digits}`;
+    return digits;
+  };
+
+  const formatPhoneNumber = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length === 12 && digits.startsWith('91')) {
+      return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+    }
+    if (digits.length === 10) {
+      return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+    }
+    return value;
+  };
+
   const handleCall = () => {
-    const url = `tel:${driver.phoneNumber}`;
+    const url = `tel:${normalizePhoneNumber(driver.phoneNumber)}`;
     Linking.canOpenURL(url)
       .then((supported) => {
         if (supported) {
@@ -100,23 +121,32 @@ export default function DriverDetails() {
       .catch((err) => console.error('An error occurred', err));
   };
 
-  const handleWhatsApp = () => {
-    // Format phone number to remove + and spaces for wa.me link
-    const cleanPhone = driver.phoneNumber.replace(/[\+\s]/g, '');
-    const url = `https://wa.me/${cleanPhone}?text=Hey I need ${driver.vehicleType} now`;
-    Linking.canOpenURL(url)
-      .then((supported) => {
-        if (supported) {
-          Linking.openURL(url);
-        } else {
-          Toast.show({
-            type: 'error',
-            text1: 'Error',
-            text2: 'WhatsApp is not installed on your device.',
-          });
-        }
-      })
-      .catch((err) => console.error('An error occurred', err));
+  const handleWhatsApp = async () => {
+    let locationLink = '';
+    
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        let location = await Location.getCurrentPositionAsync({});
+        locationLink = `\n\nMy current location: https://maps.google.com/?q=${location.coords.latitude},${location.coords.longitude}`;
+      }
+    } catch (e) {
+      console.log('Could not fetch location for WhatsApp', e);
+    }
+
+    const cleanPhone = normalizePhoneNumber(driver.phoneNumber);
+    const message = `Hey I need ${driver.vehicleType || driver.category} now.${locationLink}`;
+    const encodedMessage = encodeURIComponent(message);
+    const webUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+    Linking.openURL(webUrl).catch((err) => {
+      console.error('An error occurred while opening WhatsApp', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'WhatsApp link could not be opened.',
+      });
+    });
   };
 
   return (
@@ -184,7 +214,7 @@ export default function DriverDetails() {
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Phone Number</Text>
             <Text style={[styles.infoValue, { color: colors.text }]}>
-              {driver.phoneNumber}
+              {formatPhoneNumber(driver.phoneNumber)}
             </Text>
           </View>
         </View>

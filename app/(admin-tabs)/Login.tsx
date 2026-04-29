@@ -101,6 +101,15 @@ export default function AdminLogin() {
             </View>
 
             <TouchableOpacity
+              onPress={() => router.push('/forgot-password' as any)}
+              style={styles.forgotPasswordContainer}
+            >
+              <Text style={[styles.forgotPasswordText, { color: colors.icon }]}>
+                Forgot Password?
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={styles.button}
               onPress={handleLogin}
               activeOpacity={0.8}
@@ -178,5 +187,14 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end',
+    marginTop: -8,
+    marginBottom: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

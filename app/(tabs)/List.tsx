@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { db } from '../../config/firebase';
 import { DriverData } from '../../types';
+import LoadingAnimation from '../../utils/LoadingAnimation';
 import { useTheme } from '../../utils/Theme';
 
 export default function ListScreen() {
@@ -22,6 +23,7 @@ export default function ListScreen() {
   const category = params.category as string;
   const [searchQuery, setSearchQuery] = useState('');
   const [drivers, setDrivers] = useState<DriverData[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'drivers'), (snapshot) => {
@@ -30,12 +32,17 @@ export default function ListScreen() {
         ...doc.data(),
       })) as DriverData[];
       setDrivers(driversData);
+      setLoading(false);
     });
     return unsubscribe;
   }, []);
 
   // Filter based on category and search query
   const filteredDrivers = drivers.filter((d) => {
+    // Check if the status is explicitly 'deactive', otherwise consider it active (for older records)
+    const isActive = !d.status || d.status === 'active';
+    if (!isActive) return false;
+
     const matchesCategory = category ? d.category === category : true;
     const searchLow = searchQuery.toLowerCase();
     const itemSub = d.subCategory ? d.subCategory.toLowerCase() : '';
@@ -140,18 +147,24 @@ export default function ListScreen() {
         </View>
       </View>
 
-      <FlatList
-        data={filteredDrivers}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No matches found</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <LoadingAnimation />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredDrivers}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No matches found</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }

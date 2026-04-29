@@ -1,6 +1,7 @@
 export type VehicleCategory = 'Auto' | 'Van';
 
 export interface DriverData {
+  status: any;
   id: string;
   name: string;
   vehicleNumber: string;
@@ -20,4 +21,11 @@ export interface Driver {
   name: string;
   vehicleType: string;
   phoneNumber: string;
+}
+
+export interface BannerData {
+  id: string;
+  imageUrl: string;
+  storagePath: string; // To delete from Firebase Storage later
+  createdAt: number;
 }

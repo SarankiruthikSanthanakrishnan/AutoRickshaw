@@ -16,6 +16,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -29,6 +30,12 @@ import { useTheme } from '../../../utils/Theme';
 0;
 
 const VEHICLE_TYPES = ['Auto', 'Car & Travels', 'Richshaw'];
+
+const normalizePhoneNumber = (value: string) => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 10) return `91${digits}`;
+  return digits;
+};
 
 export default function EditDriver() {
   const router = useRouter();
@@ -44,6 +51,7 @@ export default function EditDriver() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [subCategory, setSubCategory] = useState('');
+  const [status, setStatus] = useState('active');
   const [allSubtypes, setAllSubtypes] = useState<Record<string, string[]>>({});
   const { user } = useAuth();
 
@@ -85,8 +93,13 @@ export default function EditDriver() {
           setVehicleNumber(data.vehicleNumber || '');
           setPhoneNumber(data.phoneNumber || '');
           setImage(data.image || null);
+          setStatus(data.status || 'active');
         } else {
-          Toast.show({ type: 'error', text1: 'Not Found', text2: 'Driver not found' });
+          Toast.show({
+            type: 'error',
+            text1: 'Not Found',
+            text2: 'Driver not found',
+          });
         }
       } catch (error) {
         console.error(error);
@@ -114,6 +127,7 @@ export default function EditDriver() {
     if (name && vehicleType && vehicleNumber && phoneNumber) {
       setSaving(true);
       try {
+        const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
         let downloadURL = image;
         let cloudId = undefined;
 
@@ -129,22 +143,35 @@ export default function EditDriver() {
           name,
           vehicleType,
           vehicleNumber,
-          phoneNumber,
+          phoneNumber: normalizedPhoneNumber,
           ...(downloadURL && { image: downloadURL, driverImage: downloadURL }),
           ...(cloudId && { cloudPublicId: cloudId }),
           category: vehicleType,
           subCategory: vehicleType.toLowerCase() === 'auto' ? '' : subCategory,
+          status,
         });
 
-        Toast.show({ type: 'success', text1: 'Success', text2: 'Driver updated successfully.' });
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Driver updated successfully.',
+        });
         router.back();
       } catch (error: any) {
-        Toast.show({ type: 'error', text1: 'Error updating driver', text2: error.message });
+        Toast.show({
+          type: 'error',
+          text1: 'Error updating driver',
+          text2: error.message,
+        });
       } finally {
         setSaving(false);
       }
     } else {
-      Toast.show({ type: 'error', text1: 'Missing Details', text2: 'Please fill all details.' });
+      Toast.show({
+        type: 'error',
+        text1: 'Missing Details',
+        text2: 'Please fill all details.',
+      });
     }
   };
 
@@ -442,6 +469,23 @@ export default function EditDriver() {
               </View>
             </View>
 
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Driver Status
+              </Text>
+              <View style={[styles.switchContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                <Text style={{ color: status === 'active' ? '#16a34a' : '#ef4444', fontWeight: '600', flex: 1 }}>
+                  {status === 'active' ? 'Active' : 'Deactive'}
+                </Text>
+                <Switch
+                  value={status === 'active'}
+                  onValueChange={(val) => setStatus(val ? 'active' : 'deactive')}
+                  trackColor={{ false: '#f87171', true: '#86efac' }}
+                  thumbColor={status === 'active' ? '#16a34a' : '#ef4444'}
+                />
+              </View>
+            </View>
+
             <TouchableOpacity
               style={[
                 styles.button,
@@ -506,6 +550,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 52,
+  },
+  switchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
