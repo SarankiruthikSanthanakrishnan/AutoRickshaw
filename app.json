@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "AutoRickshawApp",
+    "slug": "AutoRickshawApp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/new-logo.jpg",
+    "scheme": "autorickshawapp",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "versionCode": 9,
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.autorickshawapp.app"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-full.png",
+          "imageWidth": 200,
+          "resizeMode": "cover",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "image": "./assets/images/splash-full.png",
+            "backgroundColor": "#0f172a"
+          }
+        }
+      ],
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d24af660-00c0-46d7-ab61-2f55b37700f1"
+      }
+    }
+  }
+}
